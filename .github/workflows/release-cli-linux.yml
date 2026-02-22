@@ -1,0 +1,71 @@
+name: Build and Release CLI (Linux)
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-cli-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Linux CLI executable
+        run: |
+          pyinstaller --onefile src/application/cli.py \
+            --paths=.
+          mv dist/cli dist/cli-linux
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-executable-linux
+          path: dist/cli-linux
+
+  release-cli-linux:
+    needs: build-cli-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete Previous CLI Linux Release
+        run: |
+          gh release list --limit 100 | grep "^cli-linux-" | awk '{print $1}' | while read tag; do
+            echo "Deleting release $tag"
+            gh release delete "$tag" --yes --cleanup-tag || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-executable-linux
+          path: .
+
+      - name: Create CLI Linux Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "CLI Linux Release ${{ github.sha }}"
+          tag_name: "cli-linux-${{ github.sha }}"
+          files: cli-linux
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,74 @@
+name: Build and Release CLI (Windows)
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-cli-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Windows CLI executable
+        run: |
+            pyinstaller --onefile src\application\cli.py `
+                --paths=.
+            Rename-Item dist\cli.exe cli-windows.exe
+            
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-executable-windows
+          path: dist\cli-windows.exe
+
+  release-cli-windows:
+    needs: build-cli-windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete Previous CLI Windows Release
+        run: |
+          gh release list --limit 100 | Select-String "^cli-windows-" | ForEach-Object { $_.Line.Split()[0] } | ForEach-Object {
+            Write-Host "Deleting release $_"
+            gh release delete "$_" --yes --cleanup-tag
+          }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        continue-on-error: true
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-executable-windows
+          path: .
+
+      - name: Create CLI Windows Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "CLI Windows Release ${{ github.sha }}"
+          tag_name: "cli-windows-${{ github.sha }}"
+          files: cli-windows.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

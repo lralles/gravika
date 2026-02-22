@@ -1,4 +1,4 @@
-name: Build and Release (Linux)
+name: Build and Release GUI (Linux)
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build-linux:
+  build-gui-linux:
     runs-on: ubuntu-latest
 
     steps:
@@ -41,10 +41,22 @@ jobs:
           name: gui-executable-linux
           path: dist/main-linux
 
-  release-linux:
-    needs: build-linux
+  release-gui-linux:
+    needs: build-gui-linux
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete Previous Linux Release
+        run: |
+          gh release list --limit 100 | grep "^linux-" | awk '{print $1}' | while read tag; do
+            echo "Deleting release $tag"
+            gh release delete "$tag" --yes --cleanup-tag || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:

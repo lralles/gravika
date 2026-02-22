@@ -1,4 +1,4 @@
-name: Build and Release (Windows)
+name: Build and Release GUI (Windows)
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build-windows:
+  build-gui-windows:
     runs-on: windows-latest
 
     steps:
@@ -41,11 +41,25 @@ jobs:
           name: gui-executable-windows
           path: dist\main-windows.exe
 
-  release-windows:
-    needs: build-windows
+  release-gui-windows:
+    needs: build-gui-windows
     runs-on: windows-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete Previous Windows Release
+        run: |
+          gh release list --limit 100 | Select-String "^windows-" | ForEach-Object { $_.Line.Split()[0] } | ForEach-Object {
+            Write-Host "Deleting release $_"
+            gh release delete "$_" --yes --cleanup-tag
+          }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        continue-on-error: true
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
