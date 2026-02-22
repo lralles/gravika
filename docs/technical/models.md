@@ -6,8 +6,8 @@ The model layer handles data management, graph processing, and analysis computat
 
 **Purpose**: Loads graphs from various file formats
 
-**Dependencies**: 
-- `pandas`, `networkx`, `networkxgmml`
+**Dependencies**:
+- `pandas`, `networkx`, `xml.etree.ElementTree` (Python standard library)
 - File system access
 
 **Key Methods**:
@@ -15,8 +15,10 @@ The model layer handles data management, graph processing, and analysis computat
 - `_load_tsv()`: Loads edge lists from tab-separated files
 - `_load_cys()`: Extracts networks from Cytoscape session files
 - `_load_gexf()`: Loads GEXF format files
+- `_read_xgmml()`: Parses XGMML format files using xml.etree
 - `process_graph()`: Applies filtering (zero-degree nodes, largest component)
 - `get_networks_from_cys()`: Lists available networks in CYS files
+- `export_cys()`: Exports graphs to Cytoscape .cys format using NetworkX's write_graphml
 
 ## CentralityAnalysisService (`centrality_service.py`)
 

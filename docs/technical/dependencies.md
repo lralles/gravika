@@ -6,7 +6,7 @@ The application relies on several Python libraries for graph analysis and visual
 
 ### Graph Processing
 - **networkx**: Graph creation, manipulation, and analysis algorithms
-- **networkxgmml**: Support for GMML format in Cytoscape files
+- **xml.etree.ElementTree**: XGMML format support for Cytoscape files (Python standard library)
 - **numpy**: Numerical computations and array operations
 - **scipy**: Scientific computing utilities
 

@@ -2,9 +2,76 @@ import pandas as pd
 import networkx as nx
 import zipfile
 import os
-import networkxgmml
+import xml.etree.ElementTree as ET
 
 class GraphLoader:
+    def _read_xgmml(self, file_content):
+        """
+        Read an XGMML file and return a NetworkX graph.
+
+        Args:
+            file_content: File path or file-like object containing XGMML data
+
+        Returns:
+            A NetworkX DiGraph object
+        """
+        tree = ET.parse(file_content)
+        root = tree.getroot()
+
+        G = nx.DiGraph()
+
+        ns = {'': 'http://www.cs.rpi.edu/XGMML'}
+        if root.tag.startswith('{'):
+            ns_uri = root.tag[1:root.tag.index('}')]
+            ns = {'': ns_uri}
+
+        for node_elem in root.findall('.//node', ns) or root.findall('.//node'):
+            node_id = node_elem.get('id')
+            node_label = node_elem.get('label', node_id)
+
+            attrs = {'label': node_label}
+            for att_elem in node_elem.findall('.//att', ns) or node_elem.findall('.//att'):
+                att_name = att_elem.get('name')
+                att_value = att_elem.get('value')
+                att_type = att_elem.get('type', 'string')
+
+                if att_type in ('real', 'integer'):
+                    try:
+                        att_value = float(att_value) if att_type == 'real' else int(att_value)
+                    except (ValueError, TypeError):
+                        pass
+
+                if att_name:
+                    attrs[att_name] = att_value
+
+            G.add_node(node_id, **attrs)
+
+        for edge_elem in root.findall('.//edge', ns) or root.findall('.//edge'):
+            source = edge_elem.get('source')
+            target = edge_elem.get('target')
+
+            attrs = {}
+            for att_elem in edge_elem.findall('.//att', ns) or edge_elem.findall('.//att'):
+                att_name = att_elem.get('name')
+                att_value = att_elem.get('value')
+                att_type = att_elem.get('type', 'string')
+
+                if att_type in ('real', 'integer'):
+                    try:
+                        att_value = float(att_value) if att_type == 'real' else int(att_value)
+                    except (ValueError, TypeError):
+                        pass
+
+                if att_name:
+                    attrs[att_name] = att_value
+
+            if source and target:
+                G.add_edge(source, target, **attrs)
+
+        return G
+
+
+
     def load(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True, network_name: str = None, directed: bool = False, label_attribute: str = None) -> nx.Graph:
         """
         Load a graph from a TSV file, a Cytoscape .cys file, or a GEXF file.
@@ -99,17 +166,13 @@ class GraphLoader:
                 # Use the first XGMML file found
                 xgmml_file = xgmml_files[0]
 
-            # Extract and read the XGMML file
             with zip_ref.open(xgmml_file) as xgmml_content:
-                G_directed = networkxgmml.XGMMLReader(xgmml_content)
+                G_directed = self._read_xgmml(xgmml_content)
                 G = nx.Graph()
 
-                # Create a mapping from original node IDs to labels (node names)
                 id_to_label = {}
 
-                # Copy nodes with their attributes, using labels as node identifiers
                 for node_id, attrs in G_directed.nodes(data=True):
-                    # Use the specified label_attribute if provided, otherwise use the label attribute
                     if label_attribute and label_attribute in attrs:
                         node_name = attrs[label_attribute]
                     else:
@@ -117,7 +180,6 @@ class GraphLoader:
                     id_to_label[node_id] = node_name
                     G.add_node(node_name, **attrs)
 
-                # Copy edges with their attributes, mapping IDs to labels
                 for source_id, target_id, attrs in G_directed.edges(data=True):
                     source_name = id_to_label[source_id]
                     target_name = id_to_label[target_id]
@@ -125,13 +187,11 @@ class GraphLoader:
                     if remove_self_edges and source_name == target_name:
                         continue
 
-                    # Extract weight from the 'interaction' attribute if available
                     weight = None
                     if 'interaction' in attrs:
                         try:
                             weight = float(attrs['interaction'])
                         except (ValueError, TypeError):
-                            # Try other numeric attributes if 'interaction' couldn't be parsed
                             weight = None
                             for key in ('weight', 'score', 'value'):
                                 val = attrs.get(key)
@@ -144,7 +204,6 @@ class GraphLoader:
                             if weight is None:
                                 weight = 1.0
                     else:
-                        # No 'interaction' attribute; check common numeric fields before defaulting
                         weight = None
                         for key in ('weight', 'score', 'value'):
                             val = attrs.get(key)
@@ -157,8 +216,8 @@ class GraphLoader:
                         if weight is None:
                             weight = 1.0
 
-                    # Add edge with weight
-                    G.add_edge(source_name, target_name, weight=weight, **attrs)
+                    edge_attrs = {k: v for k, v in attrs.items() if k != 'weight'}
+                    G.add_edge(source_name, target_name, weight=weight, **edge_attrs)
 
                 return G
 
@@ -216,7 +275,7 @@ class GraphLoader:
                     xgmml_file = xgmml_files[0]
 
                 with zip_ref.open(xgmml_file) as xgmml_content:
-                    G_directed = networkxgmml.XGMMLReader(xgmml_content)
+                    G_directed = self._read_xgmml(xgmml_content)
 
                     attributes = set()
                     for _, attrs in G_directed.nodes(data=True):
@@ -318,10 +377,8 @@ class GraphLoader:
         import zipfile
         import tempfile
 
-        # Create a copy of the graph to avoid modifying the original
         export_graph = graph.copy()
 
-        # Add combined centrality and delta attributes to nodes if provided
         if combined_centrality:
             for node in export_graph.nodes():
                 if node in combined_centrality:
@@ -332,26 +389,12 @@ class GraphLoader:
                 if node in combined_delta:
                     export_graph.nodes[node]['Combined Delta'] = combined_delta[node]
 
-        # Create a temporary directory for the XGMML file
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Generate XGMML filename
             xgmml_filename = f"{network_name}.xgmml"
             xgmml_path = os.path.join(temp_dir, xgmml_filename)
 
-            # Prefer networkxgmml if available, otherwise fall back to NetworkX writers
-            try:
-                import networkxgmml
-                networkxgmml.XGMMLWriter(export_graph, xgmml_path)
-            except Exception:
-                # Fallback: write GraphML (keeps node attributes) or GEXF if GraphML fails
-                try:
-                    import networkx as nx
-                    nx.write_graphml(export_graph, xgmml_path)
-                except Exception:
-                    # As a last resort use GEXF
-                    nx.write_gexf(export_graph, xgmml_path)
+            nx.write_graphml(export_graph, xgmml_path)
 
-            # Create the .cys file (ZIP archive)
             with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zip_ref:
                 zip_ref.write(xgmml_path, xgmml_filename)
 
