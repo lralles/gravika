@@ -88,7 +88,8 @@ class GraphAnalysisController:
 
         try:
             self.app.status.set_status("Loading preview...")
-            G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name, directed)
+            label_attribute = self.app.toolbar.get_selected_label_attribute()
+            G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name, directed, label_attribute)
 
             # Apply graph processing options
             remove_zero_degree = self.app.toolbar.remove_zero_degree_var.get()
@@ -177,7 +178,8 @@ class GraphAnalysisController:
             if not file_path:
                 raise ValueError("Please select a graph file")
 
-            G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name, directed)
+            label_attribute = self.app.toolbar.get_selected_label_attribute()
+            G = self.loader.load(edge1, edge2, weight, file_path, remove_self_edges, network_name, directed, label_attribute)
 
             # For file-based graphs, keep nodes as strings (they're usually strings anyway)
             removed_nodes = removed_nodes_str

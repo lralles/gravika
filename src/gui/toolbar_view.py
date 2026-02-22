@@ -112,6 +112,17 @@ class ToolbarView(ttk.Frame):
         self.network_label.grid_remove()
         self.network_combo.grid_remove()
 
+        # Node label attribute selection (for .cys files)
+        self.label_attr_label = ttk.Label(self.content_frame, text="Node Label Attribute")
+        self.label_attr_label.grid(row=2, column=0, sticky=tk.W, padx=4, pady=4)
+        self.label_attr_var = tk.StringVar()
+        self.label_attr_combo = ttk.Combobox(self.content_frame, textvariable=self.label_attr_var, width=40, style="Tall.TCombobox", state="readonly")
+        self.label_attr_combo.grid(row=2, column=1, columnspan=3, sticky=(tk.W, tk.E), padx=4, pady=4)
+        self.label_attr_combo.bind('<<ComboboxSelected>>', self._on_column_selected)
+        # Initially hide label attribute selector
+        self.label_attr_label.grid_remove()
+        self.label_attr_combo.grid_remove()
+
         # TSV-specific options frame (will be hidden/shown based on file type)
         self.tsv_options_frame = ttk.Frame(self.content_frame)
         self.tsv_options_frame.grid(row=2, column=0, columnspan=4, sticky=(tk.W, tk.E), padx=4, pady=4)
@@ -370,6 +381,29 @@ class ToolbarView(ttk.Frame):
         """Hide the network selector"""
         self.network_label.grid_remove()
         self.network_combo.grid_remove()
+
+    def update_label_attributes(self, attributes):
+        """Update the list of available label attributes for .cys files"""
+        self.label_attr_combo['values'] = attributes
+        if attributes:
+            self.label_attr_combo.set(attributes[0])
+            self.show_label_attribute_selector()
+        else:
+            self.hide_label_attribute_selector()
+
+    def show_label_attribute_selector(self):
+        """Show the label attribute selector for .cys files"""
+        self.label_attr_label.grid()
+        self.label_attr_combo.grid()
+
+    def hide_label_attribute_selector(self):
+        """Hide the label attribute selector"""
+        self.label_attr_label.grid_remove()
+        self.label_attr_combo.grid_remove()
+
+    def get_selected_label_attribute(self):
+        """Get the selected label attribute for .cys files"""
+        return self.label_attr_var.get() if hasattr(self, 'label_attr_var') else None
 
     def show_export_cys_button(self):
         """Show the export CYS button when a CYS file is loaded"""

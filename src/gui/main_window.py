@@ -198,18 +198,26 @@ class GraphAnalysisGUI(tk.Tk):
             if file_ext == '.cys':
                 self.toolbar.update_column_suggestions([])
                 self.toolbar.disable_column_selection()
-                self.toolbar.hide_tsv_options()  # Hide TSV-specific options for CYS files
-                self.toolbar.set_loaded_file(path, file_ext)  # Track loaded CYS file
+                self.toolbar.hide_tsv_options()
+                self.toolbar.set_loaded_file(path, file_ext)
 
                 loader = GraphLoader()
                 networks = loader.get_available_networks(path)
 
                 if networks:
                     self.toolbar.update_network_list(networks)
+                    selected_network = networks[0]
                     self.status.set_status(f"Loaded .cys file with {len(networks)} network(s)")
                 else:
                     self.toolbar.hide_network_selector()
+                    selected_network = None
                     self.status.set_status("Loaded .cys file")
+
+                attributes = loader.get_node_attributes(path, selected_network)
+                if attributes:
+                    self.toolbar.update_label_attributes(attributes)
+                else:
+                    self.toolbar.hide_label_attribute_selector()
 
                 # avoid unbind bugs (method called while constructor is executing)
                 if hasattr(self, '_controller'):

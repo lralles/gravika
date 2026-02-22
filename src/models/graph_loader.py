@@ -5,7 +5,7 @@ import os
 import networkxgmml
 
 class GraphLoader:
-    def load(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True, network_name: str = None, directed: bool = False) -> nx.Graph:
+    def load(self, edge1: str, edge2: str, weight: str, path: str, remove_self_edges: bool = True, network_name: str = None, directed: bool = False, label_attribute: str = None) -> nx.Graph:
         """
         Load a graph from a TSV file, a Cytoscape .cys file, or a GEXF file.
 
@@ -17,6 +17,7 @@ class GraphLoader:
             remove_self_edges: Whether to remove self-edges
             network_name: Name of the network to load from .cys file (optional, defaults to first network)
             directed: Whether to create a directed graph (default: False for undirected)
+            label_attribute: Node attribute to use as label for .cys files (optional)
 
         Returns:
             A NetworkX Graph or DiGraph object
@@ -24,11 +25,10 @@ class GraphLoader:
         file_ext = os.path.splitext(path)[1].lower()
 
         if file_ext == '.cys':
-            return self._load_cys(path, remove_self_edges, network_name)
+            return self._load_cys(path, remove_self_edges, network_name, label_attribute)
         elif file_ext == '.gexf':
             return self._load_gexf(path, remove_self_edges, directed)
         else:
-            # Default to TSV loading for .tsv or other files
             return self._load_tsv(edge1, edge2, weight, path, remove_self_edges, directed)
 
     def _load_gexf(self, path: str, remove_self_edges: bool = True, directed: bool = False) -> nx.Graph:
@@ -65,7 +65,7 @@ class GraphLoader:
             G.add_edge(row[edge1], row[edge2], weight=row[weight])
         return G
 
-    def _load_cys(self, path: str, remove_self_edges: bool = True, network_name: str = None) -> nx.Graph:
+    def _load_cys(self, path: str, remove_self_edges: bool = True, network_name: str = None, label_attribute: str = None) -> nx.Graph:
         """
         Load graph from Cytoscape .cys file.
 
@@ -76,6 +76,7 @@ class GraphLoader:
             path: Path to the .cys file
             remove_self_edges: Whether to remove self-edges
             network_name: Name of the network (XGMML file) to load. If None, loads the first network.
+            label_attribute: Node attribute to use as node label. If None, uses 'label' attribute.
         """
         with zipfile.ZipFile(path, 'r') as zip_ref:
             # Find all XGMML files in the archive
@@ -108,8 +109,11 @@ class GraphLoader:
 
                 # Copy nodes with their attributes, using labels as node identifiers
                 for node_id, attrs in G_directed.nodes(data=True):
-                    # Use the label as the node name if available, otherwise use the ID
-                    node_name = attrs.get('label', node_id)
+                    # Use the specified label_attribute if provided, otherwise use the label attribute
+                    if label_attribute and label_attribute in attrs:
+                        node_name = attrs[label_attribute]
+                    else:
+                        node_name = attrs.get('label', node_id)
                     id_to_label[node_id] = node_name
                     G.add_node(node_name, **attrs)
 
@@ -176,6 +180,54 @@ class GraphLoader:
                 xgmml_files = [f for f in zip_ref.namelist() if f.endswith('.xgmml')]
                 # Extract just the filename without path
                 return [os.path.basename(f) for f in xgmml_files]
+        except Exception:
+            return []
+
+    def get_node_attributes(self, path: str, network_name: str = None) -> list[str]:
+        """
+        Get list of available node attributes in a .cys file.
+
+        Args:
+            path: Path to the .cys file
+            network_name: Name of the network to load. If None, uses the first network.
+
+        Returns:
+            List of node attribute names
+        """
+        if not path.endswith('.cys'):
+            return []
+
+        try:
+            with zipfile.ZipFile(path, 'r') as zip_ref:
+                xgmml_files = [f for f in zip_ref.namelist() if f.endswith('.xgmml')]
+
+                if not xgmml_files:
+                    return []
+
+                if network_name:
+                    xgmml_file = None
+                    for f in xgmml_files:
+                        if os.path.basename(f) == network_name:
+                            xgmml_file = f
+                            break
+                    if not xgmml_file:
+                        return []
+                else:
+                    xgmml_file = xgmml_files[0]
+
+                with zip_ref.open(xgmml_file) as xgmml_content:
+                    G_directed = networkxgmml.XGMMLReader(xgmml_content)
+
+                    attributes = set()
+                    for _, attrs in G_directed.nodes(data=True):
+                        attributes.update(attrs.keys())
+
+                    attr_list = sorted(list(attributes))
+                    if 'label' in attr_list:
+                        attr_list.remove('label')
+                        attr_list.insert(0, 'label')
+
+                    return attr_list
         except Exception:
             return []
 
