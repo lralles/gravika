@@ -11,3 +11,4 @@ build
 *.gexf
 *.csv
 artifacts
+assets/iPSC_Case_Study.tsv
