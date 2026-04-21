@@ -2,12 +2,14 @@
 
 A comprehensive tool for analyzing how node removal affects centrality measures in network graphs. Supports multiple file formats and provides interactive visualization of network structure and analysis results.
 
+To tool has 2 versions, one GUI for exploratory use and visualization and a CLI for bigger graphs and faster computations.
+
 ## Features
 
 - **Multiple File Formats**: TSV, CYS (Cytoscape), and GEXF support
-- **Random Graph Generation**: Built-in generators for testing and exploration
+- **Random Graph Generation (GUI only)**: Built-in generators for testing and exploration
 - **Centrality Measures**: Degree (Normalized and Unnormalized), Betweenness, Closeness, Eigenvector and Katz
-- **Interactive Visualization**: Graph plots with impact highlighting and customizable display options
+- **Interactive Visualization (GUI only)**: Graph plots with impact highlighting and customizable display options
 - **Export Capabilities**: Save results in CSV, SVG, CYS
 
 ## Documentation
@@ -36,3 +38,9 @@ A comprehensive tool for analyzing how node removal affects centrality measures 
 5. **Analyze**: Run analysis to calculate impact on remaining nodes
 6. **Visualize**: Explore results in table and graph views
 7. **Export**: Save results and visualizations
+
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+This ensures that any modifications, including those used in network services, remain open source.
