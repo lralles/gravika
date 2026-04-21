@@ -1,4 +1,4 @@
-# Graph Centrality Analysis
+# Gravika
 
 A comprehensive tool for analyzing how node removal affects centrality measures in network graphs. Supports multiple file formats and provides interactive visualization of network structure and analysis results.
 
