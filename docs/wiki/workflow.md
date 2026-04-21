@@ -2,6 +2,8 @@
 
 This guide walks through the complete analysis workflow from data loading to result visualization.
 
+## GUI Workflow
+
 ## Step 1: Graph Selection
 
 ### Option A: Load from File
@@ -71,4 +73,37 @@ Select from available measures:
 - **CSV**: Analysis results as spreadsheet
 - **SVG**: Graph visualization as image
 - **CYS**: Cytoscape session with results
+
+## CLI Workflow
+
+1. Prepare an input graph file (TSV, GEXF, or CYS)
+2. Run the CLI with required arguments
+3. Inspect terminal summary and generated CSV output
+
+### Minimal command
+```bash
+python3 -m src.application.cli \
+  --file-type gexf \
+  --file-location graph.gexf \
+  --centralities degree,closeness
+```
+
+### Command with node removal and filters
+```bash
+python3 -m src.application.cli \
+  --file-type tsv \
+  --file-location edges.tsv \
+  --nodes A,B,C \
+  --centralities degree,betweenness,eigenvector \
+  --remove-zero-degree \
+  --largest-component \
+  --output impacted_nodes.csv
+```
+
+### CLI output behavior
+- Prints loaded and processed graph sizes
+- Warns about requested nodes not found in graph
+- Prints diameter before and after removal
+- Writes full result table to CSV (`--output`)
+- Prints first 5 rows as preview
 
