@@ -76,6 +76,12 @@ python3 -m src.application.cli \
 4. **Analyze**: CLI computes centrality impact and diameter deltas
 5. **Export**: CSV is written to `--output`
 
+## Acknowledgements
+
+This project was developed by Leonardo Rezende Alles as part of an undergraduate thesis under the supervision of Bruno Iochins Grisci and Bruno César Feltes.
+
+This work was funded by the Coordenação de Aperfeiçoamento de Pessoal de Nível Superior (CAPES, Brazil; Finance code 001) and the Fundação de Amparo à Pesquisa do Estado do Rio Grande do Sul (FAPERGS) [24/2551-0001277-0; 24/2551-0000725-3; 25/2551-0002116-2]. This work was supported by the Serrapilheira Institute (grant number Serra - R-2501-51351). 
+
 ## License
 
 This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).

@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Leonardo Rezende Alles
+# SPDX-License-Identifier: AGPL-3.0-or-later
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
