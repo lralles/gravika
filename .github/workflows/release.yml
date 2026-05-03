@@ -129,130 +129,33 @@ jobs:
           name: gui-executable-windows
           path: dist\main-windows.exe
 
-  release-cli-linux:
-    needs: build-cli-linux
+  release:
+    needs: [build-cli-linux, build-cli-windows, build-gui-linux, build-gui-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Delete Previous CLI Linux Release
+      - name: Delete Previous Release
         run: |
-          gh release list --limit 100 | grep "^cli-linux-" | awk '{print $1}' | while read tag; do
-            echo "Deleting release $tag"
-            gh release delete "$tag" --yes --cleanup-tag || true
-          done
+          gh release delete "latest" --yes --cleanup-tag || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download artifact
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: cli-executable-linux
-          path: .
+          path: dist
 
-      - name: Create CLI Linux Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "CLI Linux Release ${{ github.sha }}"
-          tag_name: "cli-linux-${{ github.sha }}"
-          files: cli-linux
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  release-cli-windows:
-    needs: build-cli-windows
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Delete Previous CLI Windows Release
-        run: |
-          gh release list --limit 100 | Select-String "^cli-windows-" | ForEach-Object { $_.Line.Split()[0] } | ForEach-Object {
-            Write-Host "Deleting release $_"
-            gh release delete "$_" --yes --cleanup-tag
-          }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
-        continue-on-error: true
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: cli-executable-windows
-          path: .
-
-      - name: Create CLI Windows Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "CLI Windows Release ${{ github.sha }}"
-          tag_name: "cli-windows-${{ github.sha }}"
-          files: cli-windows.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  release-gui-linux:
-    needs: build-gui-linux
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Delete Previous Linux Release
-        run: |
-          gh release list --limit 100 | grep "^linux-" | awk '{print $1}' | while read tag; do
-            echo "Deleting release $tag"
-            gh release delete "$tag" --yes --cleanup-tag || true
-          done
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: gui-executable-linux
-          path: .
-
-      - name: Create Linux Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "Linux Release ${{ github.sha }}"
-          tag_name: "linux-${{ github.sha }}"
-          files: main-linux
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  release-gui-windows:
-    needs: build-gui-windows
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Delete Previous Windows Release
-        run: |
-          gh release list --limit 100 | Select-String "^windows-" | ForEach-Object { $_.Line.Split()[0] } | ForEach-Object {
-            Write-Host "Deleting release $_"
-            gh release delete "$_" --yes --cleanup-tag
-          }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
-        continue-on-error: true
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: gui-executable-windows
-          path: .
-
-      - name: Create Windows Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "Windows Release ${{ github.sha }}"
-          tag_name: "windows-${{ github.sha }}"
-          files: main-windows.exe
+          name: "Latest Release"
+          tag_name: "latest"
+          files: |
+            dist/cli-executable-linux/cli-linux
+            dist/cli-executable-windows/cli-windows.exe
+            dist/gui-executable-linux/main-linux
+            dist/gui-executable-windows/main-windows.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
