@@ -1,0 +1,258 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-cli-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Linux CLI executable
+        run: |
+          pyinstaller --onefile src/application/cli.py \
+            --paths=.
+          mv dist/cli dist/cli-linux
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-executable-linux
+          path: dist/cli-linux
+
+  build-cli-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Windows CLI executable
+        run: |
+            pyinstaller --onefile src\application\cli.py `
+                --paths=.
+            Rename-Item dist\cli.exe cli-windows.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-executable-windows
+          path: dist\cli-windows.exe
+
+  build-gui-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Linux GUI executable
+        run: |
+          pyinstaller --onefile src/application/main.py \
+            --hidden-import=matplotlib.backends.backend_svg \
+            --hidden-import=PIL._tkinter_finder \
+            --paths=.
+          mv dist/main dist/main-linux
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gui-executable-linux
+          path: dist/main-linux
+
+  build-gui-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Windows GUI executable
+        run: |
+            pyinstaller --onefile src\application\main.py `
+                --hidden-import=matplotlib.backends.backend_svg `
+                --hidden-import=PIL._tkinter_finder `
+                --paths=.
+            Rename-Item dist\main.exe main-windows.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gui-executable-windows
+          path: dist\main-windows.exe
+
+  release-cli-linux:
+    needs: build-cli-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete Previous CLI Linux Release
+        run: |
+          gh release list --limit 100 | grep "^cli-linux-" | awk '{print $1}' | while read tag; do
+            echo "Deleting release $tag"
+            gh release delete "$tag" --yes --cleanup-tag || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-executable-linux
+          path: .
+
+      - name: Create CLI Linux Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "CLI Linux Release ${{ github.sha }}"
+          tag_name: "cli-linux-${{ github.sha }}"
+          files: cli-linux
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-cli-windows:
+    needs: build-cli-windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete Previous CLI Windows Release
+        run: |
+          gh release list --limit 100 | Select-String "^cli-windows-" | ForEach-Object { $_.Line.Split()[0] } | ForEach-Object {
+            Write-Host "Deleting release $_"
+            gh release delete "$_" --yes --cleanup-tag
+          }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        continue-on-error: true
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-executable-windows
+          path: .
+
+      - name: Create CLI Windows Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "CLI Windows Release ${{ github.sha }}"
+          tag_name: "cli-windows-${{ github.sha }}"
+          files: cli-windows.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-gui-linux:
+    needs: build-gui-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete Previous Linux Release
+        run: |
+          gh release list --limit 100 | grep "^linux-" | awk '{print $1}' | while read tag; do
+            echo "Deleting release $tag"
+            gh release delete "$tag" --yes --cleanup-tag || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gui-executable-linux
+          path: .
+
+      - name: Create Linux Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Linux Release ${{ github.sha }}"
+          tag_name: "linux-${{ github.sha }}"
+          files: main-linux
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-gui-windows:
+    needs: build-gui-windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete Previous Windows Release
+        run: |
+          gh release list --limit 100 | Select-String "^windows-" | ForEach-Object { $_.Line.Split()[0] } | ForEach-Object {
+            Write-Host "Deleting release $_"
+            gh release delete "$_" --yes --cleanup-tag
+          }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        continue-on-error: true
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gui-executable-windows
+          path: .
+
+      - name: Create Windows Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Windows Release ${{ github.sha }}"
+          tag_name: "windows-${{ github.sha }}"
+          files: main-windows.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
