@@ -2,26 +2,183 @@
 
 ## Installation
 
-### Prerequisites
+There are three ways to run the application. Try them in order — if one fails, move to the next.
+
+---
+
+### Option 1: Prebuilt Binary
+
+Download the latest release from the [Releases page](../../releases/latest). Choose the file that matches your platform:
+
+| File | Platform |
+|---|---|
+| `gui-linux` | GUI — Linux |
+| `gui-macos` | GUI — macOS |
+| `gui-windows.exe` | GUI — Windows |
+| `cli-linux` | CLI — Linux |
+| `cli-macos` | CLI — macOS |
+| `cli-windows.exe` | CLI — Windows |
+
+> **Antivirus warning**: Some antivirus software may flag or block the executable because it is an unsigned binary built with PyInstaller. If this happens, add an exception in your antivirus settings or use Option 2 to compile it yourself.
+
+> **Slow startup**: The first launch of a prebuilt binary may take several seconds while the application unpacks itself. This is normal.
+
+#### Linux — grant execute permission
+
+After downloading, make the file executable before running it:
+
+```bash
+chmod +x gui-linux
+./gui-linux
+```
+
+```bash
+chmod +x cli-linux
+./cli-linux --help
+```
+
+#### macOS — grant execute permission
+
+```bash
+chmod +x gui-macos
+./gui-macos
+```
+
+```bash
+chmod +x cli-macos
+./cli-macos --help
+```
+
+#### Windows
+
+Double-click `gui-windows.exe` to launch the GUI, or run `cli-windows.exe` from a terminal.
+
+---
+
+### Option 2: Compile Your Own Binary
+
+Use this if the prebuilt binary is blocked by your antivirus or does not run on your system.
+
+#### Prerequisites
 - Python 3.7 or higher
 - pip package manager
+- tkinter (see below)
 
-### Install Dependencies
+#### Install tkinter
+
+tkinter is not a pip package — it must be installed at the system level.
+
+**Linux (Debian / Ubuntu):**
+```bash
+sudo apt-get install python3-tk
+```
+
+**Linux (Fedora / RHEL):**
+```bash
+sudo dnf install python3-tkinter
+```
+
+**macOS** (if not already included with your Python install):
+```bash
+brew install python-tk
+```
+
+**Windows:** tkinter is bundled with the standard Python installer from [python.org](https://www.python.org/downloads/) — no extra step needed.
+
+#### Create a virtual environment (recommended)
+
+**Linux / macOS:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+**Windows:**
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+#### Install Python dependencies
+
+```bash
+pip install -r requirements.txt
+pip install pyinstaller
+```
+
+#### Build
+
+**GUI — Linux / macOS:**
+```bash
+pyinstaller --onefile src/application/main.py \
+  --hidden-import=matplotlib.backends.backend_svg \
+  --hidden-import=PIL._tkinter_finder \
+  --paths=.
+```
+
+**GUI — Windows:**
+```powershell
+pyinstaller --onefile src\application\main.py `
+    --hidden-import=matplotlib.backends.backend_svg `
+    --hidden-import=PIL._tkinter_finder `
+    --paths=.
+```
+
+**CLI — Linux / macOS:**
+```bash
+pyinstaller --onefile src/application/cli.py --paths=.
+```
+
+**CLI — Windows:**
+```powershell
+pyinstaller --onefile src\application\cli.py --paths=.
+```
+
+The compiled binary will be placed in the `dist/` folder. On Linux/macOS run `chmod +x dist/<binary>` before executing.
+
+---
+
+### Option 3: Run Directly from Source
+
+Use this if you want to skip compilation entirely and run the application with Python directly.
+
+#### Prerequisites
+- Python 3.7 or higher
+- pip package manager
+- tkinter (see install instructions in Option 2 above)
+
+#### Create a virtual environment (recommended)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+On Windows:
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+#### Install Python dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-## Run the Application
+#### Run
 
-### GUI
+**GUI:**
 ```bash
 python3 -m src.application.main
 ```
 
-### CLI
+**CLI:**
 ```bash
 python3 -m src.application.cli --help
 ```
+
+
 
 ## First Launch
 
