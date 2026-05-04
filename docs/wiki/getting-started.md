@@ -8,7 +8,7 @@ There are three ways to run the application. Try them in order — if one fails,
 
 ### Option 1: Prebuilt Binary
 
-Download the latest release from the [Releases page](../../releases/latest). Choose the file that matches your platform:
+Download the latest release from the [Releases page](https://github.com/lralles/gravika/releases). Choose the file that matches your platform:
 
 | File | Platform |
 |---|---|
