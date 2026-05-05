@@ -8,11 +8,11 @@ The tool has 2 versions:
 
 ## Features
 
-- **Multiple File Formats**: TSV, CYS (Cytoscape), and GEXF support
-- **Random Graph Generation (GUI only)**: Built-in generators for testing and exploration
-- **Centrality Measures**: Degree (Normalized and Unnormalized), Betweenness, Closeness, Eigenvector and Katz
-- **Interactive Visualization (GUI only)**: Graph plots with impact highlighting and customizable display options
-- **Export Capabilities**: Save results in CSV, SVG, CYS (GUI) and CSV (CLI)
+- **Multiple File Formats**: TSV, CYS (Cytoscape), and GEXF support;
+- **Random Graph Generation (GUI only)**: Built-in generators for testing and exploration;
+- **Centrality Measures**: Degree (Normalized and Unnormalized), Betweenness, Closeness, Eigenvector and Katz;
+- **Interactive Visualization (GUI only)**: Graph plots with impact highlighting and customizable display options;
+- **Export Capabilities**: Save results in CSV, SVG, CYS (GUI) and CSV (CLI).
 
 ## CLI Quick Start
 
